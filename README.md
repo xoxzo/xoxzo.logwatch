@@ -62,3 +62,6 @@ $ crontab -e
 5 * * * * /home/user/.local/bin/logwatch /var/log/local1 "ERROR" one@email.com no-reply@email.com
 ```
 
+# Credits
+
+Credits to the Engineering Team at <a href="https://info.xoxzo.com/en/">Xoxzo Inc.</a> for `logwatch`
