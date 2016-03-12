@@ -64,4 +64,4 @@ $ crontab -e
 
 # Credits
 
-Credits to the Engineering Team at <a href="https://info.xoxzo.com/en/">Xoxzo Inc.</a> for `logwatch`
+Credits to the Engineering Team at <a href="https://info.xoxzo.com/">Xoxzo Inc.</a> for `logwatch`
