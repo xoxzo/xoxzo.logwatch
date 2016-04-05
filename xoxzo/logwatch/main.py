@@ -40,12 +40,13 @@ def lookfor(files, pattern, interval):
     """
     message = ''
     timestamps = within(interval)
+    since = datetime.now().strftime("%H:%M")
 
     for f in files.strip().split(","):
         abspath = os.path.abspath(f)
         heading = ("### Looking for %s log in %s within "
-                   "the last %d minutes ###\n" %
-                   (pattern, abspath, interval))
+                   "the last %d minutes since %s ###\n" %
+                   (pattern, abspath, interval, since))
         message = message + heading
 
         for timestamp in timestamps:
