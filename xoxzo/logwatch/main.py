@@ -50,7 +50,7 @@ def lookfor(files, pattern, interval):
         message = message + heading
 
         for timestamp in timestamps:
-            patterns = timestamp + '.*' + pattern
+            patterns = timestamp + ':' + '.*' + pattern
             stdout, stderr = Popen(['grep', patterns, f],
                                    stdout=PIPE).communicate()
             gotcha = stdout.decode("utf-8")
