@@ -6,6 +6,7 @@ setup(
     packages=find_packages(),
     install_requires=[
         'Baker==1.3',
+        'pytz==2016.3',
     ],
     entry_points={
         'console_scripts': [

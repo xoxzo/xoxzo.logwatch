@@ -4,6 +4,7 @@
 
 import logging
 import os
+import pytz
 import socket
 import smtplib
 import sys
@@ -18,28 +19,31 @@ import baker
 logger = logging.getLogger(__name__)
 
 
-def within(interval):
+def within(timezone, interval):
     """
-    Returns within interval in minutes
+    Returns within interval in minutes based on specified timezone
     """
-    start = datetime.now()
+    start_utc = datetime.now(pytz.utc)
+    local = pytz.timezone(timezone)
+    start_local = start_utc.astimezone(local)
+
     f = "%H:%M"
     timestamps = []
 
     for i in range(interval):
         delta = timedelta(minutes=i+1)
-        last = start - delta
+        last = start_local - delta
         timestamps.append(str(last.strftime(f)))
 
     return timestamps
 
 
-def lookfor(files, pattern, interval):
+def lookfor(files, pattern, timezone, interval):
     """
     Look for a pattern in given files within interval
     """
     message = ''
-    timestamps = within(interval)
+    timestamps = within(timezone, interval)
     since = datetime.now().strftime("%H:%M")
 
     for f in files.strip().split(","):
@@ -112,7 +116,7 @@ def send_django(files, message, pattern, emails, email_from):
 
 
 @baker.command(default=True)
-def run(files, pattern, emails, email_from, interval=5):
+def run(files, pattern, emails, email_from, timezone, interval=5):
     """
     logwatch:
     grep log messages based on pattern within certain
@@ -123,7 +127,7 @@ def run(files, pattern, emails, email_from, interval=5):
     except:
         interval = 5
 
-    message = lookfor(files, pattern, interval)
+    message = lookfor(files, pattern, timezone, interval)
     suffix = "%d minutes ###\n" % interval
 
     if not message.endswith(suffix):
