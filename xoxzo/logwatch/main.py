@@ -24,9 +24,13 @@ def localtime(timezone):
     Returns local time based on specified timezone
     """
     start_utc = datetime.now(pytz.utc)
-    local = pytz.timezone(timezone)
-    start_local = start_utc.astimezone(local)
 
+    try:
+        local = pytz.timezone(timezone)
+    except pytz.exceptions.UnknownTimeZoneError as e:
+        sys.exit("UnknownTimeZoneError: %s" % e)
+
+    start_local = start_utc.astimezone(local)
     return start_local
 
 
