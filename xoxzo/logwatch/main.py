@@ -67,6 +67,8 @@ def lookfor(files, pattern, timezone, interval):
         message = message + heading
 
         for timestamp in timestamps:
+            # add `:` so it will match `HH:MM:`
+            # not `HH:MM` which can be mislead to `MM:SS`
             patterns = timestamp + ':' + '.*' + pattern
             stdout, stderr = Popen(['grep', patterns, f],
                                    stdout=PIPE).communicate()
