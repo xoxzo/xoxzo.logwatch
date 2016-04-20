@@ -15,7 +15,8 @@ And two optional argument:
 1. Timezone - specify timezone (default: UTC). Example:
    - Asia/Tokyo
    - Europe/Amsterdam
-   For a complete timezone list, please visit [pytz](https://pypi.python.org/pypi/pytz/)
+   
+   For a complete timezone list, please visit [pytz](https://pypi.python.org/pypi/pytz/) homepage.
 2. Count interval (in minutes) - look for message within last t minutes
    (default: 5 minutes)
 
@@ -57,7 +58,7 @@ using Tokyo timezone.
 To make sure you'll get notified via email when something wrong happened,
 you can run `logwatch` as cron job.
 
-Set `logwatch` to run every 5 minutes.
+Set `logwatch` using UTC timezone and run every 5 minutes.
 
 ```
 $ crontab -e
