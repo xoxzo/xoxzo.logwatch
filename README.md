@@ -45,7 +45,7 @@ $ which logwatch
 Example how to execute `logwatch`:
 
 ```
-$ /home/user/.local/bin/logwatch /var/log/local1,/var/log/local2 "ERROR" one@email.com,two@email.com no-reply@email.com Asia/Tokyo 10
+$ /home/user/.local/bin/logwatch /var/log/local1,/var/log/local2 "ERROR" one@email.com,two@email.com no-reply@email.com --timezone=Asia/Tokyo --interval=10
 ```
 
 Above command is trying to find `ERROR` log at `/var/log/local1` and
