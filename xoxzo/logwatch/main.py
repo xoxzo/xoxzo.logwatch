@@ -43,7 +43,7 @@ def within(timezone, interval):
     f = "%H:%M"  # hour:minutes
     timestamps = []
 
-    for i in range(interval):
+    for i in list(reversed(range(interval))):
         delta = timedelta(minutes=i+1)
         last = since - delta
         timestamps.append(str(last.strftime(f)))
