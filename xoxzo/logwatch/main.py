@@ -34,29 +34,29 @@ def localtime(timezone):
     return start_local
 
 
-def within(timezone, interval):
+def within(timezone, timepattern, interval):
     """
     Returns timestamps within interval in minutes
     """
     since = localtime(timezone)
 
-    f = "%H:%M"  # hour:minutes
+    s_format = timepattern
     timestamps = []
 
     for i in list(reversed(range(interval))):
         delta = timedelta(minutes=i+1)
         last = since - delta
-        timestamps.append(str(last.strftime(f)))
+        timestamps.append(str(last.strftime(s_format)))
 
     return timestamps
 
 
-def lookfor(files, pattern, timezone, interval):
+def lookfor(files, pattern, timepattern, timezone, interval):
     """
     Look for a pattern in given files within interval
     """
     message = ''
-    timestamps = within(timezone, interval)
+    timestamps = within(timezone, timepattern, interval)
     since = localtime(timezone).strftime("%H:%M")
 
     for f in files.strip().split(","):
@@ -131,19 +131,17 @@ def send_django(files, message, pattern, emails, email_from):
 
 
 @baker.command(default=True)
-def run(files, pattern, emails, email_from, timezone="UTC", interval=5):
+def run(files, pattern, emails, email_from,
+        timepattern="%Y-%m-%d %H:%M",
+        timezone="UTC",
+        interval=5):
     """
     logwatch:
     grep log messages based on pattern within certain
     period of time (default 5 minutes) then send it via email
     """
-    try:
-        interval = int(sys.argv[-1])
-    except:
-        interval = 5
-
     since = localtime(timezone).strftime("%H:%M")
-    message = lookfor(files, pattern, timezone, interval)
+    message = lookfor(files, pattern, timepattern, timezone, interval)
     suffix = "since %s %s ###\n" % (since, timezone)
 
     if not message.endswith(suffix):
