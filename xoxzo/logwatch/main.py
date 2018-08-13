@@ -90,26 +90,27 @@ def send_smtp(files, message, pattern, emails, email_from):
     Send it to email via SMTP
     """
     hostname = socket.gethostname()
-    abspath = os.path.abspath(files)
-    email_subject = ('[xoxzo.logwatch][%s] %s REPORT at %s' %
-                     (hostname, pattern, abspath))
+    for f in files.strip().split(","):
+        abspath = os.path.abspath(f)
+        email_subject = ('[xoxzo.logwatch][%s] %s REPORT at %s' %
+                         (hostname, pattern, abspath))
 
-    email_to = []
-    for email in emails.strip().split(","):
-        email_to.append(email)
+        email_to = []
+        for email in emails.strip().split(","):
+            email_to.append(email)
 
-    msg = MIMEMultipart('alternative')
-    msg['Subject'] = email_subject
-    msg['From'] = email_from
-    msg['To'] = emails
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = email_subject
+        msg['From'] = email_from
+        msg['To'] = emails
 
-    body = MIMEText(message, 'plain', 'utf-8')
-    msg.attach(body)
+        body = MIMEText(message, 'plain', 'utf-8')
+        msg.attach(body)
 
-    server = smtplib.SMTP('localhost')
-    server.sendmail(email_from, email_to, msg.as_string())
-    server.set_debuglevel(2)
-    server.quit()
+        server = smtplib.SMTP('localhost')
+        server.sendmail(email_from, email_to, msg.as_string())
+        server.set_debuglevel(2)
+        server.quit()
 
 
 def send_django(files, message, pattern, emails, email_from):
@@ -119,15 +120,16 @@ def send_django(files, message, pattern, emails, email_from):
     from django.core.mail import send_mail
 
     hostname = socket.gethostname()
-    abspath = os.path.abspath(files)
-    email_subject = ("[xoxzo.logwatch][%s] %s REPORT at %s" %
-                     (hostname, pattern, abspath))
+    for f in files.strip().split(","):
+        abspath = os.path.abspath(f)
+        email_subject = ("[xoxzo.logwatch][%s] %s REPORT at %s" %
+                         (hostname, pattern, abspath))
 
-    email_to = []
-    for email in emails.strip().split(","):
-        email_to.append(email)
+        email_to = []
+        for email in emails.strip().split(","):
+            email_to.append(email)
 
-    send_mail(email_subject, message, email_from, email_to)
+        send_mail(email_subject, message, email_from, email_to)
 
 
 @baker.command(default=True)
