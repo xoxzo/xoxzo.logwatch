@@ -51,36 +51,34 @@ def within(timezone, timepattern, interval):
     return timestamps
 
 
-def lookfor(files, pattern, timepattern, timezone, interval):
+def lookfor(file, pattern, timepattern, timezone, interval):
     """
     Look for a pattern in given files within interval
     """
     message = ''
     timestamps = within(timezone, timepattern, interval)
     since = localtime(timezone).strftime("%H:%M")
+    abspath = os.path.abspath(file)
+    heading = ("### Looking for %s log in %s "
+               "the last %d minutes since %s %s ###\n" %
+               (pattern, abspath, interval, since, timezone))
+    message = message + heading
 
-    for f in files.strip().split(","):
-        abspath = os.path.abspath(f)
-        heading = ("### Looking for %s log in %s "
-                   "the last %d minutes since %s %s ###\n" %
-                   (pattern, abspath, interval, since, timezone))
-        message = message + heading
+    for timestamp in timestamps:
+        # add `:` so it will match `HH:MM:`
+        # not `HH:MM` which can be mislead to `MM:SS`
+        patterns = timestamp + ':' + '.*' + pattern
+        stdout, stderr = Popen(['grep', patterns, file],
+                               stdout=PIPE).communicate()
+        gotcha = stdout.decode("utf-8")
 
-        for timestamp in timestamps:
-            # add `:` so it will match `HH:MM:`
-            # not `HH:MM` which can be mislead to `MM:SS`
-            patterns = timestamp + ':' + '.*' + pattern
-            stdout, stderr = Popen(['grep', patterns, f],
-                                   stdout=PIPE).communicate()
-            gotcha = stdout.decode("utf-8")
-
-            if gotcha == '':
-                print("### Can't find any %s log at %s %s in %s ###" %
-                      (pattern, timestamp, timezone, f))
-            else:
-                print("##### Found matching %s log at %s %s in %s #####" %
-                      (pattern, timestamp, timezone, f))
-                message = message + gotcha + "\n"
+        if gotcha == '':
+            print("### Can't find any %s log at %s %s in %s ###" %
+                  (pattern, timestamp, timezone, file))
+        else:
+            print("##### Found matching %s log at %s %s in %s #####" %
+                  (pattern, timestamp, timezone, file))
+            message = message + gotcha + "\n"
 
     return message
 
