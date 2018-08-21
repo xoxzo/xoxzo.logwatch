@@ -157,8 +157,8 @@ def run(files, pattern, emails, email_from,
                 send_django(file, message, pattern, emails, email_from)
                 print("### An email has been sent to %s via Django %s ###" %
                       (emails, django_version))
-                logger.info("### An email has been sent to %s via Django %s ###" %
-                            (emails, django_version))
+                logger.info("### An email has been sent to %s "
+                            "via Django %s ###" % (emails, django_version))
         else:
             print("### No email has been sent to %s ###" % emails)
             logger.info("### No email has been sent to %s ###" % emails)
