@@ -1,0 +1,4 @@
+xoxzo.logwatch-0.6
+=======================
+* X4PUBLIBS-19 Run for each watched file
+

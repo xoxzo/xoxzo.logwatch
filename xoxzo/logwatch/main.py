@@ -51,85 +51,81 @@ def within(timezone, timepattern, interval):
     return timestamps
 
 
-def lookfor(files, pattern, timepattern, timezone, interval):
+def lookfor(file, pattern, timepattern, timezone, interval):
     """
     Look for a pattern in given files within interval
     """
     message = ''
     timestamps = within(timezone, timepattern, interval)
     since = localtime(timezone).strftime("%H:%M")
+    abspath = os.path.abspath(file)
+    heading = ("### Looking for %s log in %s "
+               "the last %d minutes since %s %s ###\n" %
+               (pattern, abspath, interval, since, timezone))
+    message = message + heading
 
-    for f in files.strip().split(","):
-        abspath = os.path.abspath(f)
-        heading = ("### Looking for %s log in %s "
-                   "the last %d minutes since %s %s ###\n" %
-                   (pattern, abspath, interval, since, timezone))
-        message = message + heading
+    for timestamp in timestamps:
+        # add `:` so it will match `HH:MM:`
+        # not `HH:MM` which can be mislead to `MM:SS`
+        patterns = timestamp + ':' + '.*' + pattern
+        stdout, stderr = Popen(['grep', patterns, file],
+                               stdout=PIPE).communicate()
+        gotcha = stdout.decode("utf-8")
 
-        for timestamp in timestamps:
-            # add `:` so it will match `HH:MM:`
-            # not `HH:MM` which can be mislead to `MM:SS`
-            patterns = timestamp + ':' + '.*' + pattern
-            stdout, stderr = Popen(['grep', patterns, f],
-                                   stdout=PIPE).communicate()
-            gotcha = stdout.decode("utf-8")
-
-            if gotcha == '':
-                print("### Can't find any %s log at %s %s in %s ###" %
-                      (pattern, timestamp, timezone, f))
-            else:
-                print("##### Found matching %s log at %s %s in %s #####" %
-                      (pattern, timestamp, timezone, f))
-                message = message + gotcha + "\n"
+        if gotcha == '':
+            print("### Can't find any %s log at %s %s in %s ###" %
+                  (pattern, timestamp, timezone, file))
+        else:
+            print("##### Found matching %s log at %s %s in %s #####" %
+                  (pattern, timestamp, timezone, file))
+            message = message + gotcha + "\n"
 
     return message
 
 
-def send_smtp(files, message, pattern, emails, email_from):
+def send_smtp(file, message, pattern, emails, email_from):
     """
     Send it to email via SMTP
     """
     hostname = socket.gethostname()
-    for f in files.strip().split(","):
-        abspath = os.path.abspath(f)
-        email_subject = ('[xoxzo.logwatch][%s] %s REPORT at %s' %
-                         (hostname, pattern, abspath))
+    abspath = os.path.abspath(file)
+    email_subject = ('[xoxzo.logwatch][%s] %s REPORT at %s' %
+                     (hostname, pattern, abspath))
 
-        email_to = []
-        for email in emails.strip().split(","):
-            email_to.append(email)
+    email_to = []
+    for email in emails.strip().split(","):
+        email_to.append(email)
 
-        msg = MIMEMultipart('alternative')
-        msg['Subject'] = email_subject
-        msg['From'] = email_from
-        msg['To'] = emails
+    msg = MIMEMultipart('alternative')
+    msg['Subject'] = email_subject
+    msg['From'] = email_from
+    msg['To'] = emails
 
-        body = MIMEText(message, 'plain', 'utf-8')
-        msg.attach(body)
+    body = MIMEText(message, 'plain', 'utf-8')
+    msg.attach(body)
 
-        server = smtplib.SMTP('localhost')
-        server.sendmail(email_from, email_to, msg.as_string())
-        server.set_debuglevel(2)
-        server.quit()
+    server = smtplib.SMTP('localhost')
+    server.sendmail(email_from, email_to, msg.as_string())
+    server.set_debuglevel(2)
+    server.quit()
 
 
-def send_django(files, message, pattern, emails, email_from):
+def send_django(file, message, pattern, emails, email_from):
     """
     Send it to email via django send_mail() function
     """
     from django.core.mail import send_mail
 
     hostname = socket.gethostname()
-    for f in files.strip().split(","):
-        abspath = os.path.abspath(f)
-        email_subject = ("[xoxzo.logwatch][%s] %s REPORT at %s" %
-                         (hostname, pattern, abspath))
+    abspath = os.path.abspath(file)
+    email_subject = ("[xoxzo.logwatch][%s] %s REPORT at %s" %
+                     (hostname, pattern, abspath))
 
-        email_to = []
-        for email in emails.strip().split(","):
-            email_to.append(email)
+    email_to = []
+    for email in emails.strip().split(","):
+        email_to.append(email)
 
-        send_mail(email_subject, message, email_from, email_to)
+    send_mail(email_subject, message, email_from, email_to)
 
 
 @baker.command(default=True)
@@ -143,27 +139,29 @@ def run(files, pattern, emails, email_from,
     period of time (default 5 minutes) then send it via email
     """
     since = localtime(timezone).strftime("%H:%M")
-    message = lookfor(files, pattern, timepattern, timezone, interval)
-    suffix = "since %s %s ###\n" % (since, timezone)
 
-    if not message.endswith(suffix):
-        try:
-            import django
-        except ImportError:
-            send_smtp(files, message, pattern, emails, email_from)
-            print("### An email has been sent to %s via SMTP ###" % emails)
-            logger.info("### An email has been sent to %s via SMTP ###" %
-                        emails)
+    for file in files.strip().split(","):
+        message = lookfor(file, pattern, timepattern, timezone, interval)
+        suffix = "since %s %s ###\n" % (since, timezone)
+
+        if not message.endswith(suffix):
+            try:
+                import django
+            except ImportError:
+                send_smtp(file, message, pattern, emails, email_from)
+                print("### An email has been sent to %s via SMTP ###" % emails)
+                logger.info("### An email has been sent to %s via SMTP ###" %
+                            emails)
+            else:
+                django_version = django.get_version()
+                send_django(file, message, pattern, emails, email_from)
+                print("### An email has been sent to %s via Django %s ###" %
+                      (emails, django_version))
+                logger.info("### An email has been sent to %s "
+                            "via Django %s ###" % (emails, django_version))
         else:
-            django_version = django.get_version()
-            send_django(files, message, pattern, emails, email_from)
-            print("### An email has been sent to %s via Django %s ###" %
-                  (emails, django_version))
-            logger.info("### An email has been sent to %s via Django %s ###" %
-                        (emails, django_version))
-    else:
-        print("### No email has been sent to %s ###" % emails)
-        logger.info("### No email has been sent to %s ###" % emails)
+            print("### No email has been sent to %s ###" % emails)
+            logger.info("### No email has been sent to %s ###" % emails)
 
 
 def main():
