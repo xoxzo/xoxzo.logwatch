@@ -131,16 +131,6 @@ def send_django(file, message, pattern, emails, email_from):
     send_mail(email_subject, message, email_from, email_to)
 
 
-def allow_newrelic_sending(sendTo):
-
-    if sendTo is None:
-        return False
-
-    if sendTo != 'newrelic':
-        return False
-    
-    return True
-
 def send_newrelic(message, pattern, hostname):
     try:
         new_relic_url = 'https://log-api.newrelic.com/log/v1'
@@ -206,7 +196,7 @@ def run(files, pattern, emails, email_from,
         timepattern="%Y-%m-%d %H:%M",
         timezone="UTC",
         interval=5,
-        sendTo=None
+        send_to=None
     ):
     """
     logwatch:
@@ -225,7 +215,7 @@ def run(files, pattern, emails, email_from,
         if not message.endswith(suffix):
 
             # send to newrelic if allowed by user
-            if allow_newrelic_sending(sendTo):
+            if send_to == 'newrelic':
                 send_newrelic(message, pattern, hostname)
 
             try:
