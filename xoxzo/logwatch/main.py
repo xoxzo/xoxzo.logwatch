@@ -8,6 +8,9 @@ import pytz
 import socket
 import smtplib
 import sys
+import json
+import requests
+import configparser
 
 from datetime import datetime, timedelta
 from email.mime.multipart import MIMEMultipart
@@ -128,23 +131,93 @@ def send_django(file, message, pattern, emails, email_from):
     send_mail(email_subject, message, email_from, email_to)
 
 
+def send_newrelic(message, pattern, hostname):
+    try:
+        new_relic_url = 'https://log-api.newrelic.com/log/v1'
+        config = configparser.RawConfigParser()
+        config.read('/etc/xoxzo.logwatch/credentails')
+
+        if 'newrelic' not in config.sections():
+            print("###[Newrelic] Config not found ###")
+            logger.info("[Newrelic] Config not found ###")
+            return
+        
+        newrelic_config = config['newrelic']
+        url = newrelic_config.get('url', new_relic_url)
+        license_key = newrelic_config.get('license_key', None)
+
+        if not license_key:
+            print("###[Newrelic] License key not found ###")
+            logger.info("###[Newrelic] License key not found ###")
+            return
+
+        data = {
+            "common": {
+                "attributes": {
+                    "logtype": pattern,
+                    "hostname": hostname
+                }
+            }
+        }
+        
+        logs = []
+        parts = message.split("\n")
+        parts.pop(0)
+        for part in parts:
+            if part != "":
+                logs.append({'message': part})
+        
+        data['logs'] = logs
+        headers = {
+            'X-License-Key': license_key
+        }
+        data = json.dumps([data])
+        # send to new relic
+        print("###[Newrelic] Sending logs ###")
+        logger.info("[Newrelic] Sending logs ###")
+        r = requests.post(url, data = data, headers=headers)
+        print("###[Newrelic] Responded with status code %s ###" % (r.status_code))
+        logger.info("###[Newrelic] Responded with status code %s ###" % (r.status_code))
+
+        if hasattr(r, 'json'):
+            json_response = r.json()
+            print("###[Newrelic] Responded with %s ###" % (json_response))
+            logger.info("###[Newrelic] Responded with %s ###" % (json_response))
+
+    except Exception as e:
+        # Let's not interrupt logwatch
+        print("###[Newrelic] An Exception occured [%s] ###" % (str(e)))
+        logger.info("[Newrelic] An Exception occured [%s] ###" % (str(e)))
+        return
+
+
 @baker.command(default=True)
 def run(files, pattern, emails, email_from,
         timepattern="%Y-%m-%d %H:%M",
         timezone="UTC",
-        interval=5):
+        interval=5,
+        send_to=None
+    ):
     """
     logwatch:
     grep log messages based on pattern within certain
     period of time (default 5 minutes) then send it via email
     """
+
     since = localtime(timezone).strftime("%H:%M")
+    messages = []
+    hostname = socket.gethostname()
 
     for file in files.strip().split(","):
         message = lookfor(file, pattern, timepattern, timezone, interval)
         suffix = "since %s %s ###\n" % (since, timezone)
 
         if not message.endswith(suffix):
+
+            # send to newrelic if allowed by user
+            if send_to == 'newrelic':
+                send_newrelic(message, pattern, hostname)
+
             try:
                 import django
             except ImportError:

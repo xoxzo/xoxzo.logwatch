@@ -7,6 +7,7 @@ setup(
     install_requires=[
         'Baker==1.3',
         'pytz>=2016.3',
+        'requests>=2.24.0'
     ],
     entry_points={
         'console_scripts': [
